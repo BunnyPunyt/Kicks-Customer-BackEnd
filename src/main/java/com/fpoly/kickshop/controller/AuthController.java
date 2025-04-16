@@ -22,10 +22,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -153,6 +150,7 @@ public class AuthController {
     @PostMapping("/google")
     public ResponseEntity<?> googleLogin(@RequestBody Map<String, String> request) {
         String token = request.get("token");
+        System.out.println("Received Google Token: " + token); // Debug
 
         try {
             GoogleIdToken idToken = verifier.verify(token);
@@ -170,15 +168,21 @@ public class AuthController {
                 Customer newUser = new Customer();
                 newUser.setEmail(email);
                 newUser.setName(name);
-                return customerRepository.save(newUser); // Đảm bảo có ID trước khi tạo token
-            });
+                // Đặt mật khẩu mặc định là chuỗi ngẫu nhiên hoặc để trống
+                newUser.setPassword(UUID.randomUUID().toString());
+                // Gán số điện thoại mặc định (hoặc để trống)
+                newUser.setPhone("");
+                return customerRepository.save(newUser);
+            }); 
 
             // Tạo Access Token
             String accessToken = jwtUtil.generateAccessToken(user.getId(), user.getEmail());
 
+            System.out.println("Generated Access Token: " + accessToken); // Debug
+
             return ResponseEntity.ok(Map.of("accessToken", accessToken));
         } catch (Exception e) {
-            e.printStackTrace(); // In lỗi ra console để debug
+            e.printStackTrace();
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Invalid token"));
         }
     }
